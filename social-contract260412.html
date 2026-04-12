@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사회계약 시뮬레이터</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f9f7;color:#1a1a1a;min-height:100vh}
+.container{max-width:760px;margin:0 auto;padding:2rem 1.5rem}
+.header{margin-bottom:2rem;padding-bottom:1.2rem;border-bottom:0.5px solid #e0ddd6}
+.header h1{font-size:20px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
+.header p{font-size:13px;color:#888}
+.step-indicator{display:flex;align-items:center;gap:8px;margin-bottom:1.5rem}
+.step-dot{width:24px;height:24px;border-radius:50%;border:0.5px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#999;flex-shrink:0}
+.step-dot.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.step-dot.done{background:#f0ede6;color:#666;border-color:#ccc}
+.step-line{flex:1;height:0.5px;background:#e0ddd6}
+.step-label{font-size:11px;color:#999;white-space:nowrap}
+.step-label.active{color:#1a1a1a;font-weight:500}
+.ctx-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1.5rem}
+@media(max-width:520px){.ctx-grid{grid-template-columns:1fr}}
+.ctx-card{border:0.5px solid #ccc;border-radius:12px;padding:1rem;cursor:pointer;transition:all .15s;text-align:left;background:#fff;width:100%}
+.ctx-card:hover{border-color:#999;background:#f5f3ee}
+.ctx-card.selected{border:1.5px solid #1a1a1a}
+.ctx-name{font-size:13px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
+.ctx-desc{font-size:11px;color:#999;line-height:1.5}
+.next-btn{font-size:13px;padding:8px 20px;border-radius:20px;border:0.5px solid #1a1a1a;background:#1a1a1a;color:#fff;cursor:pointer;transition:opacity .15s}
+.next-btn:disabled{opacity:.35;cursor:not-allowed}
+.next-btn:hover:not(:disabled){opacity:.8}
+.back-btn{font-size:12px;padding:6px 14px;border-radius:16px;border:0.5px solid #ccc;background:transparent;color:#666;cursor:pointer;margin-right:8px}
+.sec-title{font-size:11px;font-weight:500;color:#999;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.var-pool-section{margin-bottom:1.2rem}
+.pool-sec-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pool-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.pool-sec-label{font-size:11px;font-weight:500;color:#888;letter-spacing:.05em;text-transform:uppercase}
+.var-select-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.vsel-btn{border:0.5px solid #ccc;border-radius:8px;padding:8px 10px;cursor:pointer;text-align:left;background:#fff;transition:all .15s;width:100%}
+.vsel-btn:hover{border-color:#999}
+.vsel-btn.selected{border:1.5px solid #1a1a1a;background:#f5f3ee}
+.vsel-name{font-size:12px;font-weight:500;color:#1a1a1a;margin-bottom:2px}
+.vsel-desc{font-size:10px;color:#999;line-height:1.4}
+.vsel-tag{font-size:10px;margin-top:4px;padding:1px 6px;border-radius:8px;display:inline-block}
+.sel-count{font-size:12px;color:#666;margin-bottom:12px}
+.sel-count span{font-weight:500;color:#1a1a1a}
+.info-box{background:#eef4fb;border:0.5px solid #b8d4ee;border-radius:8px;padding:8px 12px;font-size:11px;color:#2a5a8a;margin-bottom:1rem}
+.pool-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1.5rem}
+@media(max-width:520px){.pool-grid{grid-template-columns:1fr}}
+.pool-card{border:0.5px solid #e0ddd6;border-radius:12px;padding:12px 14px;background:#fff}
+.pool-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.pool-name-txt{font-size:13px;font-weight:500}
+.pool-nums{font-size:12px;color:#888}
+.pool-track{height:5px;background:#f0ede6;border-radius:3px;overflow:hidden;margin-bottom:4px}
+.pool-fill{height:100%;border-radius:3px;transition:width .3s}
+.pool-note{font-size:10px;color:#999}
+.tension-box{background:#fffbea;border:0.5px solid #e8d87a;border-radius:8px;padding:8px 12px;font-size:11px;color:#7a6010;margin-bottom:1rem;line-height:1.6}
+.vsection{margin-bottom:1.2rem}
+.vsec-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.vsec-label{font-size:11px;font-weight:500;color:#999;letter-spacing:.05em;text-transform:uppercase}
+.add-var-btn{font-size:11px;padding:3px 9px;border-radius:12px;border:0.5px solid #ccc;background:transparent;color:#888;cursor:pointer;margin-left:auto}
+.add-var-btn:hover{background:#f0ede6}
+.vrow{border:0.5px solid #e0ddd6;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#fff}
+.vrow-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+.vname{font-size:13px;font-weight:500;color:#1a1a1a}
+.vval{font-size:13px;font-weight:500;color:#1a1a1a}
+.vdesc{font-size:11px;color:#999;margin-bottom:6px}
+.vcontrols{display:flex;align-items:center;gap:8px}
+.rm-btn{font-size:11px;padding:2px 7px;border-radius:10px;border:0.5px solid #e0ddd6;background:transparent;color:#bbb;cursor:pointer;flex-shrink:0}
+.rm-btn:hover{color:#c0392b;border-color:#e0a0a0}
+.ptags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.ptag{font-size:10px;padding:2px 7px;border-radius:10px;background:#f0ede6;color:#888}
+.ptag.on{background:#fffbea;color:#7a6010}
+.rbadges{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.rb{font-size:10px;padding:1px 6px;border-radius:8px;border:0.5px solid #e0ddd6;color:#bbb}
+.rb.up{background:#eaf5e8;color:#2e7d32;border-color:#a5d6a7}
+.rb.dn{background:#fdecea;color:#c62828;border-color:#ef9a9a}
+.add-panel{background:#f5f3ee;border:0.5px solid #ccc;border-radius:10px;padding:12px;margin-bottom:12px}
+.add-panel-title{font-size:12px;font-weight:500;color:#1a1a1a;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.close-panel-btn{font-size:11px;padding:2px 8px;border-radius:10px;border:0.5px solid #ccc;background:transparent;color:#888;cursor:pointer}
+.cand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.cand-btn{font-size:11px;padding:6px 9px;border-radius:8px;border:0.5px solid #ccc;background:#fff;color:#888;cursor:pointer;text-align:left;line-height:1.4;width:100%}
+.cand-btn:hover{border-color:#999;color:#1a1a1a}
+.time-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1.2rem}
+@media(max-width:520px){.time-grid{grid-template-columns:1fr}}
+.tc{border:0.5px solid #e0ddd6;border-radius:12px;padding:12px;background:#fff}
+.tlabel{font-size:10px;font-weight:500;color:#999;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.mrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.mname{font-size:11px;color:#888;min-width:44px}
+.mtrack{flex:1;margin:0 6px;height:4px;background:#f0ede6;border-radius:2px;overflow:hidden}
+.mfill{height:100%;border-radius:2px;transition:width .4s}
+.mnum{font-size:11px;font-weight:500;color:#1a1a1a;min-width:18px;text-align:right}
+.diag{font-size:11px;color:#888;margin-top:8px;padding-top:8px;border-top:0.5px solid #e0ddd6;line-height:1.5}
+.insights-section{margin-top:1.2rem}
+.insight-card{border:0.5px solid #e0ddd6;border-radius:10px;padding:12px 14px;margin-bottom:8px;background:#fff}
+.insight-q{font-size:11px;font-weight:500;color:#888;margin-bottom:5px}
+.insight-a{font-size:12px;color:#1a1a1a;line-height:1.6}
+.preset-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.pbtn{font-size:11px;padding:4px 11px;border-radius:16px;border:0.5px solid #ccc;background:transparent;color:#888;cursor:pointer}
+.pbtn:hover,.pbtn.on{background:#f0ede6;color:#1a1a1a;border-color:#999}
+.restart-btn{font-size:11px;padding:4px 11px;border-radius:16px;border:0.5px solid #ccc;background:transparent;color:#bbb;cursor:pointer;margin-left:auto}
+.restart-btn:hover{color:#888}
+input[type=range]{width:100%;accent-color:#1a1a1a;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>사회계약 시뮬레이터</h1>
+    <p>지금 우리가 사회를 설계한다면 — 변수를 조정하고 30년 뒤 사회를 확인하세요</p>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+var POOLS={finance:{name:'재원',color:'#185FA5'},admin:{name:'행정력',color:'#0F6E56'},political:{name:'정치자본',color:'#534AB7'}};
+
+var COMMON_VARS=[
+  {id:'defense',name:'국방',desc:'대외 안보·군사력',pool:'finance',
+   phil:[{n:'홉스',r:[50,100],note:'주권자의 핵심 의무'},{n:'로크',r:[20,60],note:'최소 방어'}],
+   ripple:[{id:'welfare',dir:'dn',label:'복지 재원'}]},
+  {id:'police',name:'치안',desc:'내부 질서·범죄 통제',pool:'admin',
+   phil:[{n:'홉스',r:[55,100],note:'리바이어던의 기능'},{n:'로크',r:[25,60],note:'생명·재산 보호'}],
+   ripple:[{id:'freedom',dir:'dn',label:'개인 자유'}]},
+  {id:'welfare',name:'복지·공공',desc:'재분배·사회 안전망',pool:'finance',
+   phil:[{n:'루소',r:[55,100],note:'불평등은 계약의 적'},{n:'롤스',r:[50,90],note:'최소 수혜자 보호'},{n:'노직',r:[0,25],note:'강제 재분배는 침해'}],
+   ripple:[{id:'equality',dir:'up',label:'평등'}]},
+  {id:'democracy',name:'민주 참여',desc:'시민 의사결정 정도',pool:'political',
+   phil:[{n:'루소',r:[65,100],note:'일반의지는 참여에서'},{n:'매디슨',r:[35,65],note:'대의제로 횡포 방지'}],
+   ripple:[{id:'political',dir:'up',label:'정치자본'}]},
+  {id:'equality',name:'평등 추구',desc:'기회·결과의 균등',pool:'political',
+   phil:[{n:'롤스',r:[60,100],note:'차등 원칙'},{n:'노직',r:[0,25],note:'결과 평등은 자유의 적'},{n:'마르크스',r:[75,100],note:'필요에 따라 분배'}],
+   ripple:[{id:'welfare',dir:'up',label:'복지'}]},
+  {id:'infra',name:'공공 인프라',desc:'의료·교육·도로 공적 투자',pool:'finance',
+   phil:[{n:'케인스',r:[50,100],note:'공공투자가 성장을 이끈다'},{n:'하이에크',r:[0,35],note:'시장이 더 효율적'}],
+   ripple:[{id:'prosperity',dir:'up',label:'장기 번영'}]},
+  {id:'freedom',name:'개인 자유',desc:'표현·이동·선택의 범위',pool:'political',
+   phil:[{n:'밀',r:[65,100],note:'타인 해치지 않는 한 모든 자유'},{n:'홉스',r:[10,40],note:'주권이 침묵하는 곳에만'}],
+   ripple:[{id:'police',dir:'dn',label:'통제 가능성'}]},
+  {id:'expression',name:'표현의 자유',desc:'말하고 주장할 수 있는 범위',pool:'political',
+   phil:[{n:'밀',r:[60,100],note:'사상의 자유 시장'},{n:'롤스',r:[50,85],note:'정치적 자유의 우선성'}],
+   ripple:[{id:'democracy',dir:'up',label:'민주 참여'}]},
+  {id:'ruleoflaw',name:'법치주의',desc:'규칙의 엄격성, 예외 없는 적용',pool:'admin',
+   phil:[{n:'로크',r:[55,100],note:'법 앞의 평등'},{n:'몽테스키외',r:[50,90],note:'삼권분립'}],
+   ripple:[{id:'police',dir:'up',label:'치안 효과'}]},
+  {id:'market',name:'시장 자유도',desc:'규제 수준 vs 자유경쟁',pool:'admin',
+   phil:[{n:'스미스',r:[60,100],note:'보이지 않는 손'},{n:'케인스',r:[20,50],note:'시장 실패는 정부가 교정'}],
+   ripple:[{id:'equality',dir:'dn',label:'평등 추구'}]},
+  {id:'tax',name:'세금 수준',desc:'국가 재원 조달 정도',pool:'finance',
+   phil:[{n:'롤스',r:[55,100],note:'공정한 재분배를 위한 과세'},{n:'노직',r:[0,30],note:'세금은 강제 노동'}],
+   ripple:[{id:'finance',dir:'up',label:'재원 증가'}]},
+  {id:'property',name:'소유권 보호',desc:'사적 재산의 불가침성',pool:'admin',
+   phil:[{n:'로크',r:[60,100],note:'노동에서 소유권이 나온다'},{n:'루소',r:[0,30],note:'사유재산이 불평등의 기원'}],
+   ripple:[{id:'equality',dir:'dn',label:'평등 추구'}]},
+  {id:'multiculture',name:'다문화·이주',desc:'이주민 수용과 문화 다양성',pool:'political',
+   phil:[{n:'롤스',r:[50,90],note:'합당한 다원주의'},{n:'공동체주의',r:[0,40],note:'공동체 정체성 우선'}],
+   ripple:[{id:'cohesion',dir:'dn',label:'단기 통합'}]},
+  {id:'digital',name:'디지털 주권',desc:'데이터·플랫폼·AI 통제 수준',pool:'admin',
+   phil:[{n:'하버마스',r:[55,100],note:'공론장의 민주적 통제'},{n:'자유주의',r:[0,35],note:'플랫폼은 민간 영역'}],
+   ripple:[{id:'freedom',dir:'dn',label:'정보 자유'}]}
+];
+
+var KOREA_VARS=[
+  {id:'generation',name:'세대 간 형평성',desc:'미래 세대에 대한 현재의 책임',pool:'political',
+   phil:[{n:'롤스',r:[55,100],note:'저축 원칙: 미래 세대도 계약 당사자'},{n:'공리주의',r:[40,80],note:'총 효용 최대화'}],
+   ripple:[{id:'welfare',dir:'dn',label:'현세대 복지'},{id:'infra',dir:'up',label:'장기 투자'}]},
+  {id:'population',name:'인구 구조 대응',desc:'저출생·고령화 국가 개입 수준',pool:'finance',
+   phil:[{n:'케인스',r:[50,100],note:'국가가 적극 개입해야'},{n:'자유주의',r:[0,35],note:'개인 선택의 문제'}],
+   ripple:[{id:'welfare',dir:'up',label:'복지 수요'},{id:'finance',dir:'dn',label:'재원 압박'}]},
+  {id:'chaebol',name:'경제 권력 분산',desc:'재벌·독점 구조 견제 수준',pool:'admin',
+   phil:[{n:'롤스',r:[55,100],note:'경제적 불평등 교정'},{n:'스미스',r:[0,40],note:'시장이 자율 조정'}],
+   ripple:[{id:'market',dir:'dn',label:'시장 효율'},{id:'equality',dir:'up',label:'평등'}]},
+  {id:'regional',name:'지역 균형',desc:'수도권 집중 완화·지방 투자',pool:'finance',
+   phil:[{n:'롤스',r:[55,100],note:'공간적 불평등도 교정 대상'},{n:'효율주의',r:[0,35],note:'집적 효과가 더 크다'}],
+   ripple:[{id:'infra',dir:'up',label:'공공 인프라'},{id:'finance',dir:'dn',label:'재원 소모'}]}
+];
+
+var PRESETS=[
+  {name:'홉스형',vars:['defense','police','welfare','democracy','equality','infra'],vals:{defense:75,police:80,welfare:25,democracy:20,equality:25,infra:35,tax:40}},
+  {name:'로크형',vars:['defense','police','welfare','democracy','equality','infra','freedom','property','ruleoflaw'],vals:{defense:50,police:50,welfare:30,democracy:50,equality:30,infra:35,freedom:65,property:80,ruleoflaw:70,tax:35}},
+  {name:'루소형',vars:['defense','police','welfare','democracy','equality','infra','expression','multiculture','tax'],vals:{defense:30,police:30,welfare:75,democracy:80,equality:80,infra:60,expression:70,multiculture:65,tax:65}},
+  {name:'북유럽형',vars:['defense','police','welfare','democracy','equality','infra','freedom','expression','tax','ruleoflaw'],vals:{defense:45,police:50,welfare:80,democracy:75,equality:78,infra:75,freedom:70,expression:75,tax:75,ruleoflaw:75}},
+  {name:'싱가포르형',vars:['defense','police','welfare','democracy','equality','infra','market','property','ruleoflaw','digital'],vals:{defense:80,police:85,welfare:55,democracy:25,equality:40,infra:70,market:70,property:75,ruleoflaw:80,digital:70,tax:45}}
+];
+
+var CONTEXTS=[
+  {id:'universal',name:'보편 사회',desc:'시대·장소를 특정하지 않고 사회 원칙을 설계합니다'},
+  {id:'korea',name:'지금 한국',desc:'오늘날 한국의 현실적 맥락에서 설계합니다'},
+  {id:'custom',name:'직접 구성',desc:'변수를 자유롭게 골라 나만의 사회를 설계합니다'}
+];
+
+var state={step:1,ctx:null,selectedVars:[],vals:{},activePreset:null,openPanel:null};
+COMMON_VARS.concat(KOREA_VARS).forEach(function(v){state.vals[v.id]=40;});
+
+function allVars(){return COMMON_VARS.concat(KOREA_VARS);}
+function findVar(id){return allVars().find(function(v){return v.id===id;});}
+function availableVars(){return state.ctx==='korea'?COMMON_VARS.concat(KOREA_VARS):COMMON_VARS;}
+function poolMax(pid){var b=200;if(pid==='finance')b+=Math.round((state.vals['tax']||0)*.6);return b;}
+function poolUsed(pid){var s=0;state.selectedVars.forEach(function(id){var v=findVar(id);if(v&&v.pool===pid)s+=(state.vals[id]||0);});return s;}
+function barColor(v){return v>=63?'#3B6D11':v>=38?'#BA7517':'#A32D2D';}
+function vv(id){return state.vals[id]||0;}
+
+function computeOut(yr){
+  var finR=Math.min(1.1,poolMax('finance')/Math.max(1,poolUsed('finance')));
+  var decay=yr===3?1:yr===10?.93:.82;
+  var lb=yr===30?.12:yr===10?.05:0;
+  var kor=state.ctx==='korea';
+  var sec=Math.min(97,Math.max(5,Math.round((vv('defense')*.4+vv('police')*.4+vv('ruleoflaw')*.1+vv('digital')*.1)*finR*decay)));
+  var pros=Math.min(97,Math.max(5,Math.round((vv('market')*.2+vv('infra')*.25+vv('property')*.15+vv('tax')*.1+vv('welfare')*.1+vv('multiculture')*.1+(kor?vv('regional')*.1:0))*(1+lb)*finR)));
+  var coh=Math.min(97,Math.max(5,Math.round((vv('welfare')*.25+vv('equality')*.2+vv('democracy')*.2+vv('multiculture')*.15+vv('infra')*.1+(kor?(vv('regional')*.05+vv('generation')*.05):0))*(1+lb*.8)*decay)));
+  var leg=Math.min(97,Math.max(5,Math.round((vv('democracy')*.3+vv('expression')*.2+vv('freedom')*.15+vv('equality')*.15+vv('ruleoflaw')*.1+(kor?vv('chaebol')*.1:0))*(yr===3?.88:yr===10?1:1.1))));
+  var fre=Math.min(97,Math.max(5,Math.round((vv('freedom')*.35+(100-vv('police'))*.2+vv('expression')*.2+vv('democracy')*.15+(100-vv('digital'))*.1)*decay)));
+  var sus=kor?Math.min(97,Math.max(5,Math.round((vv('generation')*.35+vv('population')*.3+vv('regional')*.2+vv('infra')*.15)*(1+lb)))):null;
+  return{sec:sec,pros:pros,coh:coh,leg:leg,fre:fre,sus:sus};
+}
+
+function getDiag(out,yr){
+  var label=yr===3?'3년':yr===10?'10년':'30년';
+  var names={sec:'안전도',pros:'번영도',coh:'사회통합',leg:'정당성',fre:'체감자유',sus:'지속성'};
+  var keys=Object.keys(out).filter(function(k){return out[k]!==null;});
+  var minK=keys.slice().sort(function(a,b){return out[a]-out[b];})[0];
+  if(out[minK]<32)return label+': '+names[minK]+'이 위험 수준';
+  if(out.coh>72&&out.leg>68)return label+': 통합·정당성 안정적';
+  return label+': 전반적 균형 상태';
+}
+
+function getTensions(){
+  var t=[];
+  if(vv('police')>65&&vv('freedom')>60)t.push('강한 치안과 높은 개인자유 충돌');
+  if(vv('welfare')>65&&vv('property')>65)t.push('강한 복지와 강한 소유권 보호 — 재원 충돌');
+  if(vv('market')>65&&vv('equality')>65)t.push('시장 자유와 평등 추구 방향 충돌');
+  if(vv('digital')>65&&vv('freedom')>65)t.push('디지털 통제 강화와 개인자유 충돌');
+  if(state.ctx==='korea'){
+    if(vv('population')>65&&poolUsed('finance')>poolMax('finance')*.9)t.push('인구 대응 강화 — 재원 압박 심화');
+    if(vv('chaebol')>65&&vv('market')>65)t.push('경제 권력 분산과 시장 자유도 충돌');
+  }
+  ['finance','admin','political'].forEach(function(pid){
+    var u=poolUsed(pid),m=poolMax(pid);
+    if(u>m)t.push(POOLS[pid].name+' 초과 ('+u+'/'+m+')');
+  });
+  return t;
+}
+
+function generateInsights(){
+  var out30=computeOut(30),out3=computeOut(3);
+  var names={sec:'안전도',pros:'번영도',coh:'사회통합',leg:'정당성',fre:'체감자유',sus:'지속성'};
+  var keys=Object.keys(out30).filter(function(k){return out30[k]!==null;});
+  var kor=state.ctx==='korea';
+  var minK=keys.slice().sort(function(a,b){return out30[a]-out30[b];})[0];
+  var maxDropK=keys.slice().sort(function(a,b){return(out3[a]-out30[a])-(out3[b]-out30[b]);})[0];
+  var philMap={'홉스':function(){return vv('defense')*.3+vv('police')*.4+(100-vv('freedom'))*.3;},'로크':function(){return vv('freedom')*.25+vv('property')*.25+vv('ruleoflaw')*.25+vv('democracy')*.25;},'루소':function(){return vv('democracy')*.3+vv('equality')*.3+vv('welfare')*.2+vv('expression')*.2;},'롤스':function(){return vv('equality')*.3+vv('welfare')*.3+vv('democracy')*.2+vv('tax')*.2;},'노직':function(){return vv('property')*.4+vv('market')*.3+(100-vv('tax'))*.3;}};
+  var philScores={};Object.keys(philMap).forEach(function(k){philScores[k]=Math.round(philMap[k]());});
+  var topPhil=Object.keys(philScores).sort(function(a,b){return philScores[b]-philScores[a];})[0];
+  var topScore=philScores[topPhil];
+  var philDesc={홉스:'강한 주권과 치안을 우선하는 설계입니다. 안전을 위해 자유를 일부 양도하는 계약 구조입니다.',로크:'자유와 재산권, 법치를 균형있게 다루는 설계입니다. 정부는 자연권 보호를 위한 신탁으로 작동합니다.',루소:'시민의 직접 참여와 평등을 중시하는 설계입니다. 일반의지가 개인 이익보다 앞섭니다.',롤스:'평등과 복지를 우선하는 설계입니다. 무지의 베일 뒤에서도 동의할 수 있는 구조를 지향합니다.',노직:'소유권과 시장 자유를 중심으로 한 최소 국가 설계입니다. 강제적 재분배를 최소화합니다.'};
+  var disadvantaged=[];
+  if(vv('equality')<40)disadvantaged.push('저소득층');
+  if(vv('welfare')<35)disadvantaged.push('사회적 취약계층');
+  if(vv('democracy')<35)disadvantaged.push('정치적 소수자');
+  if(vv('multiculture')<35)disadvantaged.push('이주민·소수문화집단');
+  if(kor&&vv('generation')<40)disadvantaged.push('미래 세대');
+  if(kor&&vv('regional')<35)disadvantaged.push('비수도권 주민');
+  if(vv('freedom')<35)disadvantaged.push('표현·행동의 자유를 원하는 집단');
+  if(!disadvantaged.length)disadvantaged.push('특정 집단의 불이익이 두드러지지 않는 비교적 균형잡힌 설계');
+  var finUsed=poolUsed('finance'),finMax=poolMax('finance'),wRoom=Math.max(0,finMax-finUsed);
+  var budgetA=wRoom>20?'현재 재원에 여유('+wRoom+'p)가 있어 복지를 소폭 높일 수 있습니다. 세금 수준(현재 '+vv('tax')+')을 높이면 재원 총량이 늘어납니다.':finUsed>finMax?'재원이 이미 초과 상태입니다. 복지를 높이려면 국방(현재 '+vv('defense')+'p) 또는 인프라(현재 '+vv('infra')+'p)를 줄이거나 세금을 높여야 합니다.':'재원 여유가 거의 없습니다. 세금(현재 '+vv('tax')+')을 높이거나 다른 재원 변수를 줄여야 합니다.';
+  var koreaA=kor?'인구 구조 대응(현재 '+vv('population')+'p)을 높이면 재원 압박이 커집니다. '+(vv('tax')<60?'세금 수준(현재 '+vv('tax')+'p)을 높여 재원 총량을 먼저 확보하는 것이 현실적입니다.':'세금이 이미 높습니다. 지역 균형 투자('+vv('regional')+'p)와 인프라를 연계해 효율을 높이는 방향이 필요합니다.'):budgetA;
+  return[
+    {q:'30년 후 가장 위험한 변화는?',a:names[maxDropK]+'이 3년 후 '+out3[maxDropK]+'에서 30년 후 '+out30[maxDropK]+'로 하락합니다. '+names[minK]+'('+out30[minK]+')이 가장 낮은 수준입니다. '+(minK==='leg'?'정당성 위기는 저항운동과 체제 불안으로 이어질 수 있습니다.':minK==='coh'?'사회 분열이 심화되면 갈등 비용이 장기적으로 번영을 잠식합니다.':minK==='pros'?'번영도 하락은 재원 부족으로 이어져 다른 지표까지 연쇄 악화됩니다.':'장기적으로 시스템 전반의 재검토가 필요할 수 있습니다.')},
+    {q:'어떤 철학자의 논리와 가장 가까운가?',a:topPhil+'의 논리와 가장 가깝습니다(일치도 '+topScore+'%). '+philDesc[topPhil]},
+    {q:'이 계약에 동의하지 않을 집단은?',a:disadvantaged.join(', ')+'이 이 설계에서 불이익을 받을 가능성이 높습니다. '+(disadvantaged.length>2?'여러 집단이 동시에 불만을 가질 경우 정치적 연대와 저항이 발생할 수 있습니다.':'이 집단의 요구를 어떻게 수용할지가 계약의 안정성을 결정합니다.')},
+    {q:kor?'재원 초과 없이 인구 위기에 대응하려면?':'재원 초과 없이 복지를 높이려면?',a:koreaA}
+  ];
+}
+
+function renderStepIndicator(){
+  var steps=['맥락 선택','변수 선택','시뮬레이션'];
+  var html='<div class="step-indicator">';
+  steps.forEach(function(s,i){
+    var n=i+1,cls=n<state.step?'done':n===state.step?'active':'';
+    html+='<div class="step-dot '+cls+'">'+n+'</div><span class="step-label '+(n===state.step?'active':'')+'" >'+s+'</span>';
+    if(i<steps.length-1)html+='<div class="step-line"></div>';
+  });
+  return html+'</div>';
+}
+
+function renderStep1(){
+  return '<div>'
+    +'<div style="font-size:18px;font-weight:500;color:#1a1a1a;margin-bottom:6px">지금 우리가 사회를 설계한다면</div>'
+    +'<div style="font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6">어떤 맥락에서 설계할지 선택하세요</div>'
+    +'<div class="ctx-grid">'+CONTEXTS.map(function(c){
+      return '<button class="ctx-card'+(state.ctx===c.id?' selected':'')+'" onclick="selectCtx(\''+c.id+'\')">'
+        +'<div class="ctx-name">'+c.name+'</div><div class="ctx-desc">'+c.desc+'</div></button>';
+    }).join('')+'</div>'
+    +'<button class="next-btn" onclick="goStep2()" '+(state.ctx?'':'disabled')+'>다음 — 변수 선택</button>'
+    +'</div>';
+}
+
+function renderStep2(){
+  var avail=availableVars(),byPool={finance:[],admin:[],political:[]};
+  avail.forEach(function(v){byPool[v.pool].push(v);});
+  var poolColors={finance:'#185FA5',admin:'#0F6E56',political:'#534AB7'};
+  var poolLabels={finance:'재원 그룹',admin:'행정력 그룹',political:'정치적 자본 그룹'};
+  var sel=state.selectedVars,isKorea=state.ctx==='korea';
+  var html='<div>';
+  html+='<div style="font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:4px">어떤 가치를 다룰 사회를 설계하시겠어요?</div>';
+  html+='<div class="sel-count">선택한 변수 <span>'+sel.length+'개</span> (최소 4개 · 최대 10개)</div>';
+  if(isKorea)html+='<div class="info-box">한국 맥락 변수(세대 간 형평성, 인구 구조 대응, 경제 권력 분산, 지역 균형)가 추가되었습니다</div>';
+  Object.keys(byPool).forEach(function(pid){
+    var vars=byPool[pid];if(!vars.length)return;
+    html+='<div class="var-pool-section"><div class="pool-sec-head"><div class="pool-dot" style="background:'+poolColors[pid]+'"></div><span class="pool-sec-label">'+poolLabels[pid]+'</span></div>'
+      +'<div class="var-select-grid">'+vars.map(function(v){
+        var isSel=sel.indexOf(v.id)!==-1,isKV=KOREA_VARS.find(function(x){return x.id===v.id;});
+        return '<button class="vsel-btn'+(isSel?' selected':'')+'" onclick="toggleVar(\''+v.id+'\')">'
+          +'<div class="vsel-name">'+v.name+'</div><div class="vsel-desc">'+v.desc+'</div>'
+          +'<span class="vsel-tag" style="background:'+(isSel?'#fffbea':'#f0ede6')+';color:'+(isSel?'#7a6010':'#999')+';">'+(isKV?'한국':'공통')+'</span>'
+          +'</button>';
+      }).join('')+'</div></div>';
+  });
+  html+='<div style="margin-top:1.2rem"><button class="back-btn" onclick="goStep1()">이전</button>'
+    +'<button class="next-btn" onclick="goStep3()" '+(sel.length>=4?'':'disabled')+'>시뮬레이션 시작</button></div></div>';
+  return html;
+}
+
+function renderAddPanel(pid){
+  var avail=availableVars().filter(function(v){return v.pool===pid&&state.selectedVars.indexOf(v.id)===-1;});
+  if(!avail.length)return '';
+  var poolLabels={finance:'재원 그룹',admin:'행정력 그룹',political:'정치적 자본 그룹'};
+  return '<div class="add-panel"><div class="add-panel-title"><span>'+poolLabels[pid]+'에 추가</span>'
+    +'<button class="close-panel-btn" onclick="closePanel()">닫기</button></div>'
+    +'<div class="cand-grid">'+avail.map(function(v){
+      return '<button class="cand-btn" onclick="addVar(\''+v.id+'\')"><strong style="font-size:11px;font-weight:500;color:#1a1a1a">'+v.name+'</strong><br>'
+        +'<span style="font-size:10px;color:#999">'+v.desc+'</span></button>';
+    }).join('')+'</div></div>';
+}
+
+function renderStep3(){
+  var byPool={finance:[],admin:[],political:[]};
+  state.selectedVars.forEach(function(id){var v=findVar(id);if(v)byPool[v.pool].push(v);});
+  var poolColors={finance:'#185FA5',admin:'#0F6E56',political:'#534AB7'};
+  var poolLabels={finance:'재원 그룹',admin:'행정력 그룹',political:'정치적 자본 그룹'};
+  var tensions=getTensions(),oNames={sec:'안전',pros:'번영',coh:'통합',leg:'정당성',fre:'자유',sus:'지속성'};
+  var insights=generateInsights(),kor=state.ctx==='korea';
+  var html='<div>';
+  html+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:1rem">';
+  PRESETS.forEach(function(p){
+    html+='<button class="pbtn'+(state.activePreset===p.name?' on':'')+'" onclick="applyPreset(\''+p.name+'\')">'+p.name+'</button>';
+  });
+  html+='<button class="restart-btn" onclick="goStep1()">처음부터</button></div>';
+  html+='<div class="sec-title">자원 총량</div><div class="pool-grid">';
+  ['finance','admin','political'].forEach(function(pid){
+    var p=POOLS[pid],u=poolUsed(pid),m=poolMax(pid),pct=Math.min(100,Math.round(u/m*100)),over=u>m;
+    html+='<div class="pool-card"><div class="pool-head"><span class="pool-name-txt" style="color:'+p.color+'">'+p.name+'</span><span class="pool-nums">'+u+'/'+m+'</span></div>'
+      +'<div class="pool-track"><div class="pool-fill" style="width:'+pct+'%;background:'+(over?'#A32D2D':p.color)+'"></div></div>'
+      +'<div class="pool-note">'+(over?'초과':'잔여 '+(m-u))+'</div></div>';
+  });
+  html+='</div>';
+  if(tensions.length)html+='<div class="tension-box">'+tensions.map(function(t){return '· '+t;}).join('<br>')+'</div>';
+  Object.keys(byPool).forEach(function(pid){
+    var vars=byPool[pid];if(!vars.length)return;
+    var avail=availableVars().filter(function(v){return v.pool===pid&&state.selectedVars.indexOf(v.id)===-1;});
+    html+='<div class="vsection"><div class="vsec-head"><div class="pool-dot" style="background:'+poolColors[pid]+'"></div>'
+      +'<span class="vsec-label">'+poolLabels[pid]+'</span>'
+      +(avail.length&&state.selectedVars.length<10?'<button class="add-var-btn" onclick="openPanel(\''+pid+'\')">+ 추가</button>':'')
+      +'</div>';
+    if(state.openPanel===pid)html+=renderAddPanel(pid);
+    html+=vars.map(function(v){
+      var val=state.vals[v.id]||0,activeP=v.phil.filter(function(p){return val>=p.r[0]&&val<=p.r[1];});
+      return '<div class="vrow"><div class="vrow-top"><span class="vname">'+v.name+'</span><span class="vval">'+val+'</span></div>'
+        +'<div class="vdesc">'+v.desc+'</div>'
+        +'<div class="vcontrols"><input type="range" min="0" max="100" step="1" value="'+val+'" data-id="'+v.id+'" oninput="onSlide(this)" style="flex:1">'
+        +(state.selectedVars.length>4?'<button class="rm-btn" onclick="removeVar(\''+v.id+'\')">제거</button>':'')
+        +'</div>'
+        +'<div class="ptags">'+v.phil.map(function(p){
+          return '<span class="ptag'+(activeP.find(function(a){return a.n===p.n;})?'  on':'')+'" title="'+p.note+'">'+p.n+'</span>';
+        }).join('')+'</div>'
+        +(v.ripple?'<div class="rbadges">'+v.ripple.map(function(r){
+          return '<span class="rb '+(r.dir==='up'?'up':'dn')+'">'+(r.dir==='up'?'↑':'↓')+' '+r.label+'</span>';
+        }).join('')+'</div>':'')
+        +'</div>';
+    }).join('')+'</div>';
+  });
+  html+='<div class="sec-title" style="margin-top:1.5rem">시간대별 사회 변화</div><div class="time-grid">';
+  [3,10,30].forEach(function(yr,i){
+    var out=computeOut(yr),keys=Object.keys(out).filter(function(k){return out[k]!==null;});
+    html+='<div class="tc"><div class="tlabel">'+['3년 후','10년 후','30년 후'][i]+'</div>'
+      +keys.map(function(k){
+        return '<div class="mrow"><span class="mname">'+oNames[k]+'</span>'
+          +'<div class="mtrack"><div class="mfill" style="width:'+out[k]+'%;background:'+barColor(out[k])+'"></div></div>'
+          +'<span class="mnum">'+out[k]+'</span></div>';
+      }).join('')+'<div class="diag">'+getDiag(out,yr)+'</div></div>';
+  });
+  html+='</div>';
+  html+='<div class="insights-section"><div class="sec-title">이 설계에 대한 분석</div>'
+    +insights.map(function(ins){
+      return '<div class="insight-card"><div class="insight-q">'+ins.q+'</div><div class="insight-a">'+ins.a+'</div></div>';
+    }).join('')+'</div></div>';
+  return html;
+}
+
+function renderApp(){
+  var html=renderStepIndicator();
+  if(state.step===1)html+=renderStep1();
+  else if(state.step===2)html+=renderStep2();
+  else html+=renderStep3();
+  document.getElementById('app').innerHTML=html;
+}
+
+function selectCtx(id){state.ctx=id;renderApp();}
+function toggleVar(id){
+  var idx=state.selectedVars.indexOf(id);
+  if(idx===-1){if(state.selectedVars.length>=10)return;state.selectedVars.push(id);}
+  else{if(state.selectedVars.length<=1)return;state.selectedVars.splice(idx,1);}
+  renderApp();
+}
+function goStep1(){state.step=1;renderApp();}
+function goStep2(){if(!state.ctx)return;state.step=2;renderApp();}
+function goStep3(){if(state.selectedVars.length<4)return;state.step=3;renderApp();}
+function openPanel(pid){state.openPanel=pid;renderApp();}
+function closePanel(){state.openPanel=null;renderApp();}
+function addVar(id){state.selectedVars.push(id);state.openPanel=null;renderApp();}
+function removeVar(id){state.selectedVars=state.selectedVars.filter(function(x){return x!==id;});renderApp();}
+function onSlide(el){state.vals[el.dataset.id]=parseInt(el.value);state.activePreset=null;renderApp();}
+function applyPreset(name){
+  var p=PRESETS.find(function(x){return x.name===name;});if(!p)return;
+  state.activePreset=name;state.selectedVars=p.vars.slice();
+  Object.keys(p.vals).forEach(function(id){state.vals[id]=p.vals[id];});
+  state.step=3;renderApp();
+}
+
+renderApp();
+</script>
+</body>
+</html>
