@@ -109,7 +109,6 @@ input[type=range]{width:100%;accent-color:#1a1a1a;cursor:pointer}
 </div>
 <script>
 var POOLS={finance:{name:'재원',color:'#185FA5'},admin:{name:'행정력',color:'#0F6E56'},political:{name:'정치자본',color:'#534AB7'}};
- 
 var COMMON_VARS=[
   {id:'defense',name:'국방',desc:'대외 안보·군사력 수준',pool:'finance',
    phil:[{n:'홉스',r:[50,100],note:'주권자의 핵심 의무'},{n:'로크',r:[20,60],note:'자연권 보호를 위한 최소 방어'}],
@@ -149,9 +148,11 @@ var COMMON_VARS=[
    ripple:[{id:'cohesion',dir:'dn',label:'단기 통합'}]},
   {id:'digital',name:'디지털 주권',desc:'데이터·플랫폼·AI에 대한 국가 통제 수준',pool:'admin',
    phil:[{n:'하버마스',r:[55,100],note:'공론장의 민주적 통제'},{n:'자유주의',r:[0,35],note:'플랫폼은 민간 영역'}],
-   ripple:[{id:'freedom',dir:'dn',label:'정보 자유'}]}
+   ripple:[{id:'freedom',dir:'dn',label:'정보 자유'}]},
+  {id:'infoecology',name:'정보생태계 건전성',desc:'시민이 공유하는 사실 기반의 신뢰도·다양성',pool:'political',
+   phil:[{n:'하버마스',r:[55,100],note:'공론장은 공유된 사실 기반 위에 선다'},{n:'롤스',r:[45,85],note:'공적 이성은 공통 정보를 전제한다'},{n:'밀',r:[50,90],note:'사상의 자유 시장은 오류를 교정한다'}],
+   ripple:[{id:'democracy',dir:'up',label:'민주 참여 효과'},{id:'legitimacy',dir:'up',label:'정당성'}]}
 ];
- 
 var KOREA_VARS=[
   {id:'generation',name:'세대 간 형평성',desc:'미래 세대에 대한 현재 세대의 책임 수준',pool:'political',
    phil:[{n:'롤스',r:[55,100],note:'저축 원칙: 미래 세대도 계약 당사자'},{n:'공리주의',r:[40,80],note:'전체 세대의 총 효용을 최대화'}],
@@ -163,29 +164,20 @@ var KOREA_VARS=[
    phil:[{n:'롤스',r:[55,100],note:'공간적 불평등도 교정 대상'},{n:'효율주의',r:[0,35],note:'집적 효과가 분산보다 크다'}],
    ripple:[{id:'publicinvest',dir:'up',label:'사회기반투자'},{id:'finance',dir:'dn',label:'재원 소모'}]}
 ];
- 
 var PRESETS=[
-  {name:'홉스형',vars:['defense','police','welfare','democracy','equality','publicinvest'],
-   vals:{defense:75,police:80,welfare:25,democracy:20,equality:25,publicinvest:35,tax:40}},
-  {name:'로크형',vars:['defense','police','welfare','democracy','equality','publicinvest','freedom','property','ruleoflaw'],
-   vals:{defense:50,police:50,welfare:30,democracy:50,equality:30,publicinvest:40,freedom:65,property:80,ruleoflaw:70,tax:35}},
-  {name:'루소형',vars:['defense','police','welfare','democracy','equality','publicinvest','multiculture','tax'],
-   vals:{defense:30,police:30,welfare:75,democracy:80,equality:80,publicinvest:60,multiculture:65,tax:65}},
-  {name:'북유럽형',vars:['defense','police','welfare','democracy','equality','publicinvest','freedom','tax','ruleoflaw'],
-   vals:{defense:45,police:50,welfare:80,democracy:75,equality:78,publicinvest:75,freedom:70,tax:75,ruleoflaw:75}},
-  {name:'싱가포르형',vars:['defense','police','welfare','democracy','equality','publicinvest','market','property','ruleoflaw','digital'],
-   vals:{defense:80,police:85,welfare:55,democracy:25,equality:40,publicinvest:70,market:70,property:75,ruleoflaw:80,digital:70,tax:45}}
+  {name:'홉스형',vars:['defense','police','welfare','democracy','equality','publicinvest'],vals:{defense:75,police:80,welfare:25,democracy:20,equality:25,publicinvest:35,tax:40}},
+  {name:'로크형',vars:['defense','police','welfare','democracy','equality','publicinvest','freedom','property','ruleoflaw'],vals:{defense:50,police:50,welfare:30,democracy:50,equality:30,publicinvest:40,freedom:65,property:80,ruleoflaw:70,tax:35}},
+  {name:'루소형',vars:['defense','police','welfare','democracy','equality','publicinvest','multiculture','tax','infoecology'],vals:{defense:30,police:30,welfare:75,democracy:80,equality:80,publicinvest:60,multiculture:65,tax:65,infoecology:70}},
+  {name:'북유럽형',vars:['defense','police','welfare','democracy','equality','publicinvest','freedom','tax','ruleoflaw','infoecology'],vals:{defense:45,police:50,welfare:80,democracy:75,equality:78,publicinvest:75,freedom:70,tax:75,ruleoflaw:75,infoecology:78}},
+  {name:'싱가포르형',vars:['defense','police','welfare','democracy','equality','publicinvest','market','property','ruleoflaw','digital'],vals:{defense:80,police:85,welfare:55,democracy:25,equality:40,publicinvest:70,market:70,property:75,ruleoflaw:80,digital:70,tax:45}}
 ];
- 
 var CONTEXTS=[
   {id:'universal',name:'보편 사회',desc:'시대·장소를 특정하지 않고 사회 원칙을 설계합니다'},
   {id:'korea',name:'지금 한국',desc:'오늘날 한국의 현실적 맥락에서 설계합니다'},
   {id:'custom',name:'직접 구성',desc:'변수를 자유롭게 골라 나만의 사회를 설계합니다'}
 ];
- 
 var state={step:1,ctx:null,selectedVars:[],vals:{},activePreset:null,openPanel:null};
 COMMON_VARS.concat(KOREA_VARS).forEach(function(v){state.vals[v.id]=40;});
- 
 function allVars(){return COMMON_VARS.concat(KOREA_VARS);}
 function findVar(id){return allVars().find(function(v){return v.id===id;});}
 function availableVars(){return state.ctx==='korea'?COMMON_VARS.concat(KOREA_VARS):COMMON_VARS;}
@@ -193,21 +185,20 @@ function poolMax(pid){var b=200;if(pid==='finance')b+=Math.round((state.vals['ta
 function poolUsed(pid){var s=0;state.selectedVars.forEach(function(id){var v=findVar(id);if(v&&v.pool===pid)s+=(state.vals[id]||0);});return s;}
 function barColor(v){return v>=63?'#3B6D11':v>=38?'#BA7517':'#A32D2D';}
 function vv(id){return state.vals[id]||0;}
- 
 function computeOut(yr){
   var finR=Math.min(1.1,poolMax('finance')/Math.max(1,poolUsed('finance')));
   var decay=yr===3?1:yr===10?.93:.82;
   var lb=yr===30?.12:yr===10?.05:0;
   var kor=state.ctx==='korea';
+  var infoBonus=vv('infoecology')*.003;
   var sec=Math.min(97,Math.max(5,Math.round((vv('defense')*.4+vv('police')*.4+vv('ruleoflaw')*.1+vv('digital')*.1)*finR*decay)));
   var pros=Math.min(97,Math.max(5,Math.round((vv('market')*.2+vv('publicinvest')*.25+vv('property')*.15+vv('tax')*.1+vv('welfare')*.1+vv('multiculture')*.1+(kor?vv('regional')*.1:0))*(1+lb)*finR)));
-  var coh=Math.min(97,Math.max(5,Math.round((vv('welfare')*.25+vv('equality')*.2+vv('democracy')*.2+vv('multiculture')*.15+vv('publicinvest')*.1+(kor?(vv('regional')*.05+vv('generation')*.05):0))*(1+lb*.8)*decay)));
-  var leg=Math.min(97,Math.max(5,Math.round((vv('democracy')*.35+vv('freedom')*.2+vv('equality')*.2+vv('ruleoflaw')*.15+vv('tax')*.1)*(yr===3?.88:yr===10?1:1.1))));
+  var coh=Math.min(97,Math.max(5,Math.round((vv('welfare')*.2+vv('equality')*.2+vv('democracy')*.15+vv('multiculture')*.15+vv('publicinvest')*.1+vv('infoecology')*.2+(kor?(vv('regional')*.05+vv('generation')*.05):.1))*(1+lb*.8)*decay)));
+  var leg=Math.min(97,Math.max(5,Math.round((vv('democracy')*.3+vv('freedom')*.15+vv('equality')*.2+vv('ruleoflaw')*.15+vv('infoecology')*.2)*(yr===3?.88:yr===10?1:1.1)*(1+infoBonus))));
   var fre=Math.min(97,Math.max(5,Math.round((vv('freedom')*.45+(100-vv('police'))*.25+vv('democracy')*.15+(100-vv('digital'))*.15)*decay)));
   var sus=kor?Math.min(97,Math.max(5,Math.round((vv('generation')*.35+vv('population')*.3+vv('regional')*.2+vv('publicinvest')*.15)*(1+lb)))):null;
   return{sec:sec,pros:pros,coh:coh,leg:leg,fre:fre,sus:sus};
 }
- 
 function getDiag(out,yr){
   var label=yr===3?'3년':yr===10?'10년':'30년';
   var names={sec:'안전도',pros:'번영도',coh:'사회통합',leg:'정당성',fre:'체감자유',sus:'지속성'};
@@ -217,18 +208,18 @@ function getDiag(out,yr){
   if(out.coh>72&&out.leg>68)return label+': 통합·정당성 안정적';
   return label+': 전반적 균형 상태';
 }
- 
 function getTensions(){
   var t=[];
   if(vv('police')>65&&vv('freedom')>60)t.push('강한 치안과 높은 개인자유 충돌');
   if(vv('welfare')>65&&vv('property')>65)t.push('강한 복지와 강한 소유권 보호 — 재원 충돌');
   if(vv('market')>65&&vv('equality')>65)t.push('시장 자유와 평등 추구 방향 충돌');
   if(vv('digital')>65&&vv('freedom')>65)t.push('디지털 통제 강화와 개인자유 충돌');
+  if(vv('infoecology')<30&&vv('democracy')>60)t.push('정보생태계 취약 — 민주 참여의 실질 효과가 반감됩니다');
+  if(vv('infoecology')<30&&vv('digital')<30)t.push('정보생태계 취약 + 디지털 주권 미비 — 허위정보 확산 위험');
   if(state.ctx==='korea'&&vv('population')>65&&poolUsed('finance')>poolMax('finance')*.9)t.push('인구 대응 강화 — 재원 압박 심화');
   ['finance','admin','political'].forEach(function(pid){var u=poolUsed(pid),m=poolMax(pid);if(u>m)t.push(POOLS[pid].name+' 초과 ('+u+'/'+m+')');});
   return t;
 }
- 
 function generateInsights(){
   var out30=computeOut(30),out3=computeOut(3);
   var names={sec:'안전도',pros:'번영도',coh:'사회통합',leg:'정당성',fre:'체감자유',sus:'지속성'};
@@ -236,15 +227,16 @@ function generateInsights(){
   var kor=state.ctx==='korea';
   var minK=keys.slice().sort(function(a,b){return out30[a]-out30[b];})[0];
   var maxDropK=keys.slice().sort(function(a,b){return(out3[a]-out30[a])-(out3[b]-out30[b]);})[0];
-  var philMap={'홉스':function(){return vv('defense')*.3+vv('police')*.4+(100-vv('freedom'))*.3;},'로크':function(){return vv('freedom')*.25+vv('property')*.25+vv('ruleoflaw')*.25+vv('democracy')*.25;},'루소':function(){return vv('democracy')*.3+vv('equality')*.3+vv('welfare')*.25+vv('multiculture')*.15;},'롤스':function(){return vv('equality')*.3+vv('welfare')*.3+vv('democracy')*.2+vv('tax')*.2;},'노직':function(){return vv('property')*.4+vv('market')*.3+(100-vv('tax'))*.3;}};
+  var philMap={'홉스':function(){return vv('defense')*.3+vv('police')*.4+(100-vv('freedom'))*.3;},'로크':function(){return vv('freedom')*.25+vv('property')*.25+vv('ruleoflaw')*.25+vv('democracy')*.25;},'루소':function(){return vv('democracy')*.25+vv('equality')*.25+vv('welfare')*.25+vv('infoecology')*.25;},'롤스':function(){return vv('equality')*.3+vv('welfare')*.3+vv('democracy')*.2+vv('tax')*.2;},'노직':function(){return vv('property')*.4+vv('market')*.3+(100-vv('tax'))*.3;}};
   var philScores={};Object.keys(philMap).forEach(function(k){philScores[k]=Math.round(philMap[k]());});
   var topPhil=Object.keys(philScores).sort(function(a,b){return philScores[b]-philScores[a];})[0];
-  var philDesc={'홉스':'강한 주권과 치안을 우선하는 설계입니다. 안전을 위해 자유를 일부 양도하는 계약 구조입니다.','로크':'자유와 재산권, 법치를 균형있게 다루는 설계입니다. 정부는 자연권 보호를 위한 신탁으로 작동합니다.','루소':'시민의 직접 참여와 평등을 중시하는 설계입니다. 일반의지가 개인 이익보다 앞섭니다.','롤스':'평등과 복지를 우선하는 설계입니다. 무지의 베일 뒤에서도 동의할 수 있는 구조를 지향합니다.','노직':'소유권과 시장 자유를 중심으로 한 최소 국가 설계입니다. 강제적 재분배를 최소화합니다.'};
+  var philDesc={'홉스':'강한 주권과 치안을 우선하는 설계입니다. 안전을 위해 자유를 일부 양도하는 계약 구조입니다.','로크':'자유와 재산권, 법치를 균형있게 다루는 설계입니다. 정부는 자연권 보호를 위한 신탁으로 작동합니다.','루소':'시민의 직접 참여, 평등, 공유된 정보 기반을 중시하는 설계입니다. 일반의지는 건강한 공론장 위에서만 성립합니다.','롤스':'평등과 복지를 우선하는 설계입니다. 무지의 베일 뒤에서도 동의할 수 있는 구조를 지향합니다.','노직':'소유권과 시장 자유를 중심으로 한 최소 국가 설계입니다. 강제적 재분배를 최소화합니다.'};
   var dis=[];
   if(vv('equality')<40)dis.push('저소득층');
   if(vv('welfare')<35)dis.push('사회적 취약계층');
   if(vv('democracy')<35)dis.push('정치적 소수자');
   if(vv('multiculture')<35)dis.push('이주민·소수문화집단');
+  if(vv('infoecology')<35)dis.push('미디어 리터러시가 낮은 집단');
   if(kor&&vv('generation')<40)dis.push('미래 세대');
   if(kor&&vv('regional')<35)dis.push('비수도권 주민');
   if(vv('freedom')<35)dis.push('표현·행동의 자유를 원하는 집단');
@@ -259,7 +251,6 @@ function generateInsights(){
     {q:kor?'재원 초과 없이 인구 위기에 대응하려면?':'재원 초과 없이 복지를 높이려면?',a:koreaA}
   ];
 }
- 
 function renderStepIndicator(){
   var steps=['맥락 선택','변수 선택','시뮬레이션'];
   var html='<div class="step-indicator">';
@@ -270,17 +261,12 @@ function renderStepIndicator(){
   });
   return html+'</div>';
 }
- 
 function renderStep1(){
   return '<div><div style="font-size:18px;font-weight:500;color:#1a1a1a;margin-bottom:6px">지금 우리가 사회를 설계한다면</div>'
     +'<div style="font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6">어떤 맥락에서 설계할지 선택하세요</div>'
-    +'<div class="ctx-grid">'+CONTEXTS.map(function(c){
-      return '<button class="ctx-card'+(state.ctx===c.id?' selected':'')+'" data-action="ctx" data-val="'+c.id+'">'
-        +'<div class="ctx-name">'+c.name+'</div><div class="ctx-desc">'+c.desc+'</div></button>';
-    }).join('')+'</div>'
+    +'<div class="ctx-grid">'+CONTEXTS.map(function(c){return '<button class="ctx-card'+(state.ctx===c.id?' selected':'')+'" data-action="ctx" data-val="'+c.id+'"><div class="ctx-name">'+c.name+'</div><div class="ctx-desc">'+c.desc+'</div></button>';}).join('')+'</div>'
     +'<button class="next-btn" data-action="step2" '+(state.ctx?'':'disabled')+'>다음 — 변수 선택</button></div>';
 }
- 
 function renderStep2(){
   var avail=availableVars(),byPool={finance:[],admin:[],political:[]};
   avail.forEach(function(v){byPool[v.pool].push(v);});
@@ -295,29 +281,19 @@ function renderStep2(){
     html+='<div class="var-pool-section"><div class="pool-sec-head"><div class="pool-dot" style="background:'+poolColors[pid]+'"></div><span class="pool-sec-label">'+poolLabels[pid]+'</span></div>'
       +'<div class="var-select-grid">'+vars.map(function(v){
         var isSel=sel.indexOf(v.id)!==-1,isKV=!!KOREA_VARS.find(function(x){return x.id===v.id;});
-        return '<button class="vsel-btn'+(isSel?' selected':'')+'" data-action="togglevar" data-val="'+v.id+'">'
-          +'<div class="vsel-name">'+v.name+'</div><div class="vsel-desc">'+v.desc+'</div>'
-          +'<span class="vsel-tag" style="background:'+(isSel?'#fffbea':'#f0ede6')+';color:'+(isSel?'#7a6010':'#999')+';">'+(isKV?'한국':'공통')+'</span></button>';
+        return '<button class="vsel-btn'+(isSel?' selected':'')+'" data-action="togglevar" data-val="'+v.id+'"><div class="vsel-name">'+v.name+'</div><div class="vsel-desc">'+v.desc+'</div><span class="vsel-tag" style="background:'+(isSel?'#fffbea':'#f0ede6')+';color:'+(isSel?'#7a6010':'#999')+';">'+(isKV?'한국':'공통')+'</span></button>';
       }).join('')+'</div></div>';
   });
-  html+='<div style="margin-top:1.2rem"><button class="back-btn" data-action="step1">이전</button>'
-    +'<button class="next-btn" data-action="step3" '+(sel.length>=4?'':'disabled')+'>시뮬레이션 시작</button></div></div>';
+  html+='<div style="margin-top:1.2rem"><button class="back-btn" data-action="step1">이전</button><button class="next-btn" data-action="step3" '+(sel.length>=4?'':'disabled')+'>시뮬레이션 시작</button></div></div>';
   return html;
 }
- 
 function renderAddPanel(pid){
   var avail=availableVars().filter(function(v){return v.pool===pid&&state.selectedVars.indexOf(v.id)===-1;});
   if(!avail.length)return '';
   var poolLabels={finance:'재원 그룹',admin:'행정력 그룹',political:'정치적 자본 그룹'};
-  return '<div class="add-panel"><div class="add-panel-head"><span>'+poolLabels[pid]+'에 추가</span>'
-    +'<button class="close-panel-btn" data-action="closepanel">닫기</button></div>'
-    +'<div class="cand-grid">'+avail.map(function(v){
-      return '<button class="cand-btn" data-action="addvar" data-val="'+v.id+'">'
-        +'<strong style="font-size:11px;font-weight:500;color:#1a1a1a">'+v.name+'</strong><br>'
-        +'<span style="font-size:10px;color:#999">'+v.desc+'</span></button>';
-    }).join('')+'</div></div>';
+  return '<div class="add-panel"><div class="add-panel-head"><span>'+poolLabels[pid]+'에 추가</span><button class="close-panel-btn" data-action="closepanel">닫기</button></div>'
+    +'<div class="cand-grid">'+avail.map(function(v){return '<button class="cand-btn" data-action="addvar" data-val="'+v.id+'"><strong style="font-size:11px;font-weight:500;color:#1a1a1a">'+v.name+'</strong><br><span style="font-size:10px;color:#999">'+v.desc+'</span></button>';}).join('')+'</div></div>';
 }
- 
 function renderStep3(){
   var byPool={finance:[],admin:[],political:[]};
   state.selectedVars.forEach(function(id){var v=findVar(id);if(v)byPool[v.pool].push(v);});
@@ -327,60 +303,39 @@ function renderStep3(){
   var oNames={sec:'안전',pros:'번영',coh:'통합',leg:'정당성',fre:'자유',sus:'지속성'};
   var insights=generateInsights();
   var html='<div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:1rem">';
-  PRESETS.forEach(function(p){
-    html+='<button class="pbtn'+(state.activePreset===p.name?' on':'')+'" data-action="preset" data-val="'+p.name+'">'+p.name+'</button>';
-  });
+  PRESETS.forEach(function(p){html+='<button class="pbtn'+(state.activePreset===p.name?' on':'')+'" data-action="preset" data-val="'+p.name+'">'+p.name+'</button>';});
   html+='<button class="restart-btn" data-action="step1">처음부터</button></div>';
   html+='<div class="sec-title">자원 총량</div><div class="pool-grid" id="poolgrid">';
   ['finance','admin','political'].forEach(function(pid){
     var p=POOLS[pid],u=poolUsed(pid),m=poolMax(pid),pct=Math.min(100,Math.round(u/m*100)),over=u>m;
-    html+='<div class="pool-card" data-pid="'+pid+'"><div class="pool-head"><span class="pool-name-txt" style="color:'+p.color+'">'+p.name+'</span><span class="pool-nums">'+u+'/'+m+'</span></div>'
-      +'<div class="pool-track"><div class="pool-fill" style="width:'+pct+'%;background:'+(over?'#A32D2D':p.color)+'"></div></div>'
-      +'<div class="pool-note">'+(over?'초과':'잔여 '+(m-u))+'</div></div>';
+    html+='<div class="pool-card" data-pid="'+pid+'"><div class="pool-head"><span class="pool-name-txt" style="color:'+p.color+'">'+p.name+'</span><span class="pool-nums">'+u+'/'+m+'</span></div><div class="pool-track"><div class="pool-fill" style="width:'+pct+'%;background:'+(over?'#A32D2D':p.color)+'"></div></div><div class="pool-note">'+(over?'초과':'잔여 '+(m-u))+'</div></div>';
   });
-  html+='</div>';
-  html+='<div id="tensionwrap">'+(tensions.length?'<div class="tension-box">'+tensions.map(function(t){return '· '+t;}).join('<br>')+'</div>':'')+'</div>';
+  html+='</div><div id="tensionwrap">'+(tensions.length?'<div class="tension-box">'+tensions.map(function(t){return '· '+t;}).join('<br>')+'</div>':'')+'</div>';
   ['finance','admin','political'].forEach(function(pid){
     var vars=byPool[pid];if(!vars.length)return;
     var avail=availableVars().filter(function(v){return v.pool===pid&&state.selectedVars.indexOf(v.id)===-1;});
-    html+='<div class="vsection"><div class="vsec-head"><div class="pool-dot" style="background:'+poolColors[pid]+'"></div>'
-      +'<span class="vsec-label">'+poolLabels[pid]+'</span>'
-      +(avail.length&&state.selectedVars.length<10?'<button class="add-var-btn" data-action="openpanel" data-val="'+pid+'">+ 추가</button>':'')
-      +'</div>';
+    html+='<div class="vsection"><div class="vsec-head"><div class="pool-dot" style="background:'+poolColors[pid]+'"></div><span class="vsec-label">'+poolLabels[pid]+'</span>'
+      +(avail.length&&state.selectedVars.length<10?'<button class="add-var-btn" data-action="openpanel" data-val="'+pid+'">+ 추가</button>':'')+'</div>';
     if(state.openPanel===pid)html+=renderAddPanel(pid);
     html+=vars.map(function(v){
       var val=state.vals[v.id]||0,activeP=v.phil.filter(function(p){return val>=p.r[0]&&val<=p.r[1];});
       return '<div class="vrow"><div class="vrow-top"><span class="vname">'+v.name+'</span><span class="vval" id="val-'+v.id+'">'+val+'</span></div>'
         +'<div class="vdesc">'+v.desc+'</div>'
         +'<div class="vcontrols"><input type="range" min="0" max="100" step="1" value="'+val+'" data-action="slide" data-id="'+v.id+'" style="flex:1">'
-        +(state.selectedVars.length>4?'<button class="rm-btn" data-action="removevar" data-val="'+v.id+'">제거</button>':'')
-        +'</div>'
-        +'<div class="ptags" id="ptags-'+v.id+'">'+v.phil.map(function(p){
-          return '<span class="ptag'+(activeP.find(function(a){return a.n===p.n;})?'  on':'')+'" title="'+p.note+'">'+p.n+'</span>';
-        }).join('')+'</div>'
-        +(v.ripple?'<div class="rbadges">'+v.ripple.map(function(r){
-          return '<span class="rb '+(r.dir==='up'?'up':'dn')+'">'+(r.dir==='up'?'↑':'↓')+' '+r.label+'</span>';
-        }).join('')+'</div>':'')
+        +(state.selectedVars.length>4?'<button class="rm-btn" data-action="removevar" data-val="'+v.id+'">제거</button>':'')+'</div>'
+        +'<div class="ptags" id="ptags-'+v.id+'">'+v.phil.map(function(p){return '<span class="ptag'+(activeP.find(function(a){return a.n===p.n;})?'  on':'')+'" title="'+p.note+'">'+p.n+'</span>';}).join('')+'</div>'
+        +(v.ripple?'<div class="rbadges">'+v.ripple.map(function(r){return '<span class="rb '+(r.dir==='up'?'up':'dn')+'">'+(r.dir==='up'?'↑':'↓')+' '+r.label+'</span>';}).join('')+'</div>':'')
         +'</div>';
     }).join('')+'</div>';
   });
   html+='<div class="sec-title" style="margin-top:1.5rem">시간대별 사회 변화</div><div class="time-grid" id="timegrid">';
   [3,10,30].forEach(function(yr,i){
     var out=computeOut(yr),keys=Object.keys(out).filter(function(k){return out[k]!==null;});
-    html+='<div class="tc"><div class="tlabel">'+['3년 후','10년 후','30년 후'][i]+'</div>'
-      +keys.map(function(k){
-        return '<div class="mrow"><span class="mname">'+oNames[k]+'</span>'
-          +'<div class="mtrack"><div class="mfill" style="width:'+out[k]+'%;background:'+barColor(out[k])+'"></div></div>'
-          +'<span class="mnum">'+out[k]+'</span></div>';
-      }).join('')+'<div class="diag">'+getDiag(out,yr)+'</div></div>';
+    html+='<div class="tc"><div class="tlabel">'+['3년 후','10년 후','30년 후'][i]+'</div>'+keys.map(function(k){return '<div class="mrow"><span class="mname">'+oNames[k]+'</span><div class="mtrack"><div class="mfill" style="width:'+out[k]+'%;background:'+barColor(out[k])+'"></div></div><span class="mnum">'+out[k]+'</span></div>';}).join('')+'<div class="diag">'+getDiag(out,yr)+'</div></div>';
   });
-  html+='</div><div class="insights-section" id="insights"><div class="sec-title">이 설계에 대한 분석</div>'
-    +insights.map(function(ins){
-      return '<div class="insight-card"><div class="insight-q">'+ins.q+'</div><div class="insight-a">'+ins.a+'</div></div>';
-    }).join('')+'</div></div>';
+  html+='</div><div class="insights-section" id="insights"><div class="sec-title">이 설계에 대한 분석</div>'+insights.map(function(ins){return '<div class="insight-card"><div class="insight-q">'+ins.q+'</div><div class="insight-a">'+ins.a+'</div></div>';}).join('')+'</div></div>';
   return html;
 }
- 
 function renderApp(){
   var html=renderStepIndicator();
   if(state.step===1)html+=renderStep1();
@@ -388,33 +343,19 @@ function renderApp(){
   else html+=renderStep3();
   document.getElementById('app').innerHTML=html;
 }
- 
 function updateResults(){
   var oNames={sec:'안전',pros:'번영',coh:'통합',leg:'정당성',fre:'자유',sus:'지속성'};
-  var tg=document.getElementById('timegrid');
-  if(!tg)return;
+  var tg=document.getElementById('timegrid');if(!tg)return;
   var th='';
   [3,10,30].forEach(function(yr,i){
     var out=computeOut(yr),keys=Object.keys(out).filter(function(k){return out[k]!==null;});
-    th+='<div class="tc"><div class="tlabel">'+['3년 후','10년 후','30년 후'][i]+'</div>'
-      +keys.map(function(k){
-        return '<div class="mrow"><span class="mname">'+oNames[k]+'</span>'
-          +'<div class="mtrack"><div class="mfill" style="width:'+out[k]+'%;background:'+barColor(out[k])+'"></div></div>'
-          +'<span class="mnum">'+out[k]+'</span></div>';
-      }).join('')+'<div class="diag">'+getDiag(out,yr)+'</div></div>';
+    th+='<div class="tc"><div class="tlabel">'+['3년 후','10년 후','30년 후'][i]+'</div>'+keys.map(function(k){return '<div class="mrow"><span class="mname">'+oNames[k]+'</span><div class="mtrack"><div class="mfill" style="width:'+out[k]+'%;background:'+barColor(out[k])+'"></div></div><span class="mnum">'+out[k]+'</span></div>';}).join('')+'<div class="diag">'+getDiag(out,yr)+'</div></div>';
   });
   tg.innerHTML=th;
   var ins=document.getElementById('insights');
-  if(ins){
-    var insights=generateInsights();
-    ins.innerHTML='<div class="sec-title">이 설계에 대한 분석</div>'
-      +insights.map(function(i){return '<div class="insight-card"><div class="insight-q">'+i.q+'</div><div class="insight-a">'+i.a+'</div></div>';}).join('');
-  }
+  if(ins){var insights=generateInsights();ins.innerHTML='<div class="sec-title">이 설계에 대한 분석</div>'+insights.map(function(i){return '<div class="insight-card"><div class="insight-q">'+i.q+'</div><div class="insight-a">'+i.a+'</div></div>';}).join('');}
   var tw=document.getElementById('tensionwrap');
-  if(tw){
-    var tensions=getTensions();
-    tw.innerHTML=tensions.length?'<div class="tension-box">'+tensions.map(function(t){return '· '+t;}).join('<br>')+'</div>':'';
-  }
+  if(tw){var tensions=getTensions();tw.innerHTML=tensions.length?'<div class="tension-box">'+tensions.map(function(t){return '· '+t;}).join('<br>')+'</div>':'';}
   document.querySelectorAll('.pool-card[data-pid]').forEach(function(card){
     var pid=card.dataset.pid,p=POOLS[pid],u=poolUsed(pid),m=poolMax(pid),pct=Math.min(100,Math.round(u/m*100)),over=u>m;
     card.querySelector('.pool-nums').textContent=u+'/'+m;
@@ -423,28 +364,17 @@ function updateResults(){
     card.querySelector('.pool-note').textContent=over?'초과':'잔여 '+(m-u);
   });
 }
- 
 document.addEventListener('input',function(e){
   if(e.target.dataset.action!=='slide')return;
   var id=e.target.dataset.id,val=parseInt(e.target.value);
-  state.vals[id]=val;
-  state.activePreset=null;
-  var ve=document.getElementById('val-'+id);
-  if(ve)ve.textContent=val;
+  state.vals[id]=val;state.activePreset=null;
+  var ve=document.getElementById('val-'+id);if(ve)ve.textContent=val;
   var v=findVar(id);
-  if(v){
-    var pe=document.getElementById('ptags-'+id);
-    if(pe)pe.innerHTML=v.phil.map(function(p){
-      var on=val>=p.r[0]&&val<=p.r[1];
-      return '<span class="ptag'+(on?' on':'')+'" title="'+p.note+'">'+p.n+'</span>';
-    }).join('');
-  }
+  if(v){var pe=document.getElementById('ptags-'+id);if(pe)pe.innerHTML=v.phil.map(function(p){var on=val>=p.r[0]&&val<=p.r[1];return '<span class="ptag'+(on?' on':'')+'" title="'+p.note+'">'+p.n+'</span>';}).join('');}
   updateResults();
 });
- 
 document.addEventListener('click',function(e){
-  var el=e.target.closest('[data-action]');
-  if(!el)return;
+  var el=e.target.closest('[data-action]');if(!el)return;
   var action=el.dataset.action,val=el.dataset.val;
   if(action==='ctx'){state.ctx=val;renderApp();}
   else if(action==='step1'){state.step=1;renderApp();}
@@ -461,16 +391,13 @@ document.addEventListener('click',function(e){
   else if(action==='addvar'){state.selectedVars.push(val);state.openPanel=null;renderApp();}
   else if(action==='removevar'){state.selectedVars=state.selectedVars.filter(function(x){return x!==val;});renderApp();}
   else if(action==='preset'){
-    var p=PRESETS.find(function(x){return x.name===val;});
-    if(!p)return;
+    var p=PRESETS.find(function(x){return x.name===val;});if(!p)return;
     state.activePreset=val;state.selectedVars=p.vars.slice();
     Object.keys(p.vals).forEach(function(id){state.vals[id]=p.vals[id];});
     state.step=3;renderApp();
   }
 });
- 
 renderApp();
 </script>
 </body>
 </html>
- 
